@@ -21,94 +21,64 @@ class ONEHOTENCODERINPUT(object):
         if dp.dataSetType == "assistment2009":
             width_deep_width_dict = {"skill_id": dp.columns_max['skill_id'] + 1,
                                      "correct": dp.columns_max['correct'] + 1,
+                                     "time_level": dp.columns_max['time_level'] + 1,
+                                     "attempt_level": dp.columns_max['attempt_level'] + 1,
+                                     "first_action": dp.columns_max['first_action'] + 1}
 
-                                     "attempt_count_normal": 1, "time_normal": 1, "hint_count_normal": 1,
-
-                                     "time": dp.columns_max['time'] + 1, "hint_count": dp.columns_max['hint_count'] + 1,
-                                     "attempt_count": dp.columns_max['attempt_count'] + 1,
-
-                                     "first_action": dp.columns_max['first_action'] + 1, "problem_id": 100,
-                                     "template_id": 100}
-            self.data_attempt_count = tf.slice(self.inputs, [0, 0, dp.columnsName_to_index['attempt_count']],
-                                               [-1, -1, 1])
-            tmp_attempt_count = tf.to_int32(self.data_attempt_count)
-            self.data_attempt_count_process = tf.to_float(tf.squeeze(
-                tf.one_hot(indices=tmp_attempt_count, depth=width_deep_width_dict['attempt_count'], on_value=1.0,
-                           off_value=0.0, axis=-1)))
-            self.data_attempt_count_normal = tf.slice(self.inputs,
-                                                      [0, 0, dp.columnsName_to_index['attempt_count_normal']],
-                                                      [-1, -1, 1])
             self.data_first_action = tf.to_int32(
                 tf.slice(self.inputs, [0, 0, dp.columnsName_to_index['first_action']], [-1, -1, 1]))
             self.data_first_action_process = tf.to_float(tf.squeeze(
                 tf.one_hot(indices=self.data_first_action, depth=width_deep_width_dict['first_action'], on_value=1.0,
                            off_value=0.0, axis=-1)))
 
-            # category， embedding
-            self.data_problem_id = tf.to_int32(
-                tf.slice(self.inputs, [0, 0, dp.columnsName_to_index['problem_id']], [-1, -1, 1]))
-            embedding_problem_id = tf.get_variable("embedding_problem_id",
-                                                   [196500, width_deep_width_dict['problem_id']], dtype=tf.float32)
-            self.data_problem_id_process = tf.to_float(
-                tf.squeeze(tf.nn.embedding_lookup(embedding_problem_id, self.data_problem_id)))
 
-            self.data_template_id = tf.to_int32(
-                tf.slice(self.inputs, [0, 0, dp.columnsName_to_index['template_id']], [-1, -1, 1]))
-            embedding_template_id = tf.get_variable("embedding_template_id",
-                                                    [103000, width_deep_width_dict['template_id']], dtype=tf.float32)
-            self.data_template_id_process = tf.to_float(
-                tf.squeeze(tf.nn.embedding_lookup(embedding_template_id, self.data_template_id)))
+            self.data_time_level = tf.to_int32(
+                tf.slice(self.inputs, [0, 0, dp.columnsName_to_index['time_level']], [-1, -1, 1]))
+            self.data_time_level_process = tf.to_float(tf.squeeze(
+                tf.one_hot(indices=self.data_time_level, depth=width_deep_width_dict['time_level'], on_value=1.0,
+                           off_value=0.0, axis=-1)))
 
-        elif dp.dataSetType == "assistment2014":
+            self.data_attempt_level = tf.to_int32(
+                tf.slice(self.inputs, [0, 0, dp.columnsName_to_index['attempt_level']], [-1, -1, 1]))
+            self.data_attempt_level_process = tf.to_float(tf.squeeze(
+                tf.one_hot(indices=self.data_attempt_level, depth=width_deep_width_dict['attempt_level'], on_value=1.0,
+                           off_value=0.0, axis=-1)))
+
+        elif dp.dataSetType == "cmu_stat_f2011":  # kdd
             width_deep_width_dict = {"skill_id": dp.columns_max['skill_id'] + 1,
                                      "correct": dp.columns_max['correct'] + 1,
-
-                                     "attempt_count_normal": 1, "time_normal": 1, "hint_count_normal": 1,
-
-                                     "time": dp.columns_max['time'] + 1, "hint_count": dp.columns_max['hint_count'] + 1,
-                                     "attempt_count": dp.columns_max['attempt_count'] + 1,
-
-                                     "first_action": dp.columns_max['first_action'] + 1, "problem_id": 100,
-                                     "bottom_hint": 2}
-            self.data_attempt_count = tf.slice(self.inputs, [0, 0, dp.columnsName_to_index['attempt_count']],
-                                               [-1, -1, 1])
-            tmp_attempt_count = tf.to_int32(self.data_attempt_count)
-            self.data_attempt_count_process = tf.to_float(tf.squeeze(
-                tf.one_hot(indices=tmp_attempt_count, depth=width_deep_width_dict['attempt_count'], on_value=1.0,
+                                     "time_level": dp.columns_max['time_level'] + 1,
+                                     "attempt_level": dp.columns_max['attempt_level'] + 1,
+                                     "first_action": dp.columns_max['first_action'] + 1
+                                     }
+            self.data_time_level = tf.to_int32(
+                tf.slice(self.inputs, [0, 0, dp.columnsName_to_index['time_level']], [-1, -1, 1]))
+            self.data_time_level_process = tf.to_float(tf.squeeze(
+                tf.one_hot(indices=self.data_time_level, depth=width_deep_width_dict['time_level'], on_value=1.0,
                            off_value=0.0, axis=-1)))
-            self.data_attempt_count_normal = tf.slice(self.inputs,
-                                                      [0, 0, dp.columnsName_to_index['attempt_count_normal']],
-                                                      [-1, -1, 1])
+
             self.data_first_action = tf.to_int32(
                 tf.slice(self.inputs, [0, 0, dp.columnsName_to_index['first_action']], [-1, -1, 1]))
             self.data_first_action_process = tf.to_float(tf.squeeze(
                 tf.one_hot(indices=self.data_first_action, depth=width_deep_width_dict['first_action'], on_value=1.0,
                            off_value=0.0, axis=-1)))
-            # category， embedding
-            self.data_problem_id = tf.to_int32(
-                tf.slice(self.inputs, [0, 0, dp.columnsName_to_index['problem_id']], [-1, -1, 1]))
-            embedding_problem_id = tf.get_variable("embedding_problem_id",
-                                                   [196500, width_deep_width_dict['problem_id']], dtype=tf.float32)
-            self.data_problem_id_process = tf.to_float(
-                tf.squeeze(tf.nn.embedding_lookup(embedding_problem_id, self.data_problem_id)))
 
-            self.data_bottom_hint = tf.slice(self.inputs, [0, 0, dp.columnsName_to_index['bottom_hint']], [-1, -1, 1])
+            self.data_attempt_level = tf.to_int32(
+                tf.slice(self.inputs, [0, 0, dp.columnsName_to_index['attempt_level']], [-1, -1, 1]))
+            self.data_attempt_level_process = tf.to_float(tf.squeeze(
+                tf.one_hot(indices=self.data_attempt_level, depth=width_deep_width_dict['attempt_level'], on_value=1.0,
+                           off_value=0.0, axis=-1)))
 
-
-        else:  # kdd
+        elif dp.dataSetType == "kdd":  # kdd
             width_deep_width_dict = {"skill_id": dp.columns_max['skill_id'] + 1,
                                      "correct": dp.columns_max['correct'] + 1,
-                                     "time": dp.columns_max['time'] + 1,
-                                     "time_normal": 1,
-                                     "hint_count": dp.columns_max['hint_count'] + 1,
-                                     "hint_count_normal": 1,
-                                     "problem_view_normal": 1,
-                                     "problem_view": dp.columns_max['problem_view'] + 1}
-            self.data_problem_view = tf.slice(self.inputs, [0, 0, dp.columnsName_to_index['problem_view']], [-1, -1, 1])
-            tmp_problem_view = tf.to_int32(self.data_problem_view)
-            self.data_problem_view_process = tf.to_float(tf.squeeze(
-                tf.one_hot(indices=tmp_problem_view, depth=width_deep_width_dict['problem_view'], on_value=1.0, off_value=0.0, axis=-1)))
-            self.data_problem_view_normal = tf.slice(self.inputs, [0, 0, dp.columnsName_to_index['problem_view_normal']], [-1, -1, 1])
+                                     "time_level": dp.columns_max['time_level'] + 1
+                                    }
+            self.data_time_level = tf.to_int32(
+                tf.slice(self.inputs, [0, 0, dp.columnsName_to_index['time_level']], [-1, -1, 1]))
+            self.data_time_level_process = tf.to_float(tf.squeeze(
+                tf.one_hot(indices=self.data_time_level, depth=width_deep_width_dict['time_level'], on_value=1.0,
+                           off_value=0.0, axis=-1)))
 
         self.data_skill_id = tf.to_int32(
             tf.slice(self.inputs, [0, 0, dp.columnsName_to_index['skill_id']], [-1, -1, 1]))
@@ -116,20 +86,6 @@ class ONEHOTENCODERINPUT(object):
             tf.one_hot(indices=self.data_skill_id, depth=width_deep_width_dict['skill_id'], on_value=1.0, off_value=0.0,
                        axis=-1)))
         self.data_correct = tf.slice(self.inputs, [0, 0, dp.columnsName_to_index['correct']], [-1, -1, 1])
-
-        self.data_time = tf.slice(self.inputs, [0, 0, dp.columnsName_to_index['time']], [-1, -1, 1])
-        tmp_time = tf.to_int32(self.data_time)
-        self.data_time_process = tf.to_float(tf.squeeze(
-            tf.one_hot(indices=tmp_time, depth=width_deep_width_dict['time'], on_value=1.0, off_value=0.0, axis=-1)))
-        self.data_time_normal = tf.slice(self.inputs, [0, 0, dp.columnsName_to_index['time_normal']], [-1, -1, 1])
-
-        self.data_hint_count = tf.slice(self.inputs, [0, 0, dp.columnsName_to_index['hint_count']], [-1, -1, 1])
-        tmp_hint_count = tf.to_int32(self.data_hint_count)
-        self.data_hint_count_process = tf.to_float(tf.squeeze(
-            tf.one_hot(indices=tmp_hint_count, depth=width_deep_width_dict['hint_count'], on_value=1.0, off_value=0.0,
-                       axis=-1)))
-        self.data_hint_count_normal = tf.slice(self.inputs, [0, 0, dp.columnsName_to_index['hint_count_normal']],
-                                               [-1, -1, 1])
 
 
     def getSkillCorrectMerge(self):
@@ -168,23 +124,10 @@ class ONEHOTENCODERINPUT(object):
         for columnName in set(self.model_category_columns):
             if columnName == 'first_action':
                 featureList.append(self.data_first_action_process)
-            elif columnName == 'problem_id':
-                featureList.append(self.data_problem_id_process)
-            elif columnName == 'problem_view':
-                featureList.append(self.data_problem_view_process)
-            elif columnName == 'template_id':
-                featureList.append(self.data_template_id_process)
-            elif columnName == 'time':
-                featureList.append(self.data_time_process)
-            elif columnName == 'attempt_count':
-                featureList.append(self.data_attempt_count_process)
-            elif columnName == 'hint_count':
-                featureList.append(self.data_hint_count_process)
-            elif columnName == 'bottom_hint':
-                featureList.append(self.data_bottom_hint_process)
-            elif columnName == 'problem_view':
-                featureList.append(self.data_problem_view_process)
-
+            elif columnName == 'time_level':
+                featureList.append(self.data_time_level_process)
+            elif columnName == 'attempt_level':
+                featureList.append(self.data_attempt_level_process)
             elif columnName in ['skill_id', 'correct']:
                 pass
             else:

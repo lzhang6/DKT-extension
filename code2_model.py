@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-from code0_parameter import AUTOENCODER_ACT,BASELINE,TARGETSIZE,AUTOENCODER_LABEL
+from code0_parameter import AUTOENCODER_ACT, BASELINE, TARGETSIZE, AUTOENCODER_LABEL
 from tensorflow.python.ops import rnn_cell
 from tensorflow.python.ops.rnn_cell import LSTMCell, BasicRNNCell, GRUCell, DropoutWrapper
 from uril_oneHotEncoder import ONEHOTENCODERINPUT
@@ -31,27 +31,31 @@ class Model(object):
         if not BASELINE:
             if AUTOENCODER_LABEL:
                 ###########################################################################################################
-                featurelist = [ohe.getSkillCorrectCrossFeature(), ohe.getCrossFeatureAll()]#, ohe.getCategoryFeatureInputs()]#,
-                               #ohe.getContinuesFeatureInputs()]
+                featurelist = [ohe.getSkillCorrectCrossFeature(),ohe.getCrossFeatureAll()]#,ohe.getCategoryFeatureInputs()]
+                                # ohe.getCategoryFeatureInputs()], # ohe.getContinuesFeatureInputs()]
                 ###########################################################################################################
                 tmp_v = tf.concat(2, featurelist)
                 tmp_vs = tf.reshape(tmp_v, [-1, int(tmp_v.get_shape()[-1])])
 
                 if AUTOENCODER_ACT == 'tanh':
-                    transfer_function=tf.nn.tanh
+                    transfer_function = tf.nn.tanh
                 elif AUTOENCODER_ACT == 'sigmoid':
-                    transfer_function=tf.nn.sigmoid
+                    transfer_function = tf.nn.sigmoid
 
-                path = './weights/'+dp.dataSetType+'/weights_' + str(tmp_vs.get_shape()[-1]) + '_' + str(TARGETSIZE) + '.csv'
+                path = './weights/' + dp.dataSetType + '/weights_' + str(tmp_vs.get_shape()[-1]) + '_' + str(
+                    TARGETSIZE) + '.csv'
                 autoencoderweights = tf.constant(np.loadtxt(path), dtype=tf.float32)
-                path = './weights/'+dp.dataSetType+'/bias_' + str(tmp_vs.get_shape()[-1]) + '_' + str(TARGETSIZE) + '.csv'
+                path = './weights/' + dp.dataSetType + '/bias_' + str(tmp_vs.get_shape()[-1]) + '_' + str(
+                    TARGETSIZE) + '.csv'
                 autoencoderBias = tf.constant(np.loadtxt(path), dtype=tf.float32)
                 tmp_vs = transfer_function(tf.matmul(tmp_vs, autoencoderweights) + autoencoderBias)
             else:
                 ###########################################################################################################
                 featurelist = [ohe.getSkillCorrectCrossFeature(), ohe.getCrossFeatureAll(), ohe.getCategoryFeatureInputs()]
+                # featurelist = [ohe.getSkillCorrectCrossFeature(), ohe.getCrossFeatureAll()]
                 ###########################################################################################################
                 tmp_v = tf.concat(2, featurelist)
+                print("==> [Tensor Shape] Final Shape\t", tmp_v.get_shape())
                 tmp_vs = tf.reshape(tmp_v, [-1, int(tmp_v.get_shape()[-1])])
         else:
             tmp_v = ohe.getSkillCorrectCrossFeature()
@@ -99,14 +103,8 @@ class Model(object):
         self._lr = tf.Variable(0.0, trainable=False)
         tvars = tf.trainable_variables()
         grads, _ = tf.clip_by_global_norm(tf.gradients(loss, tvars), config.max_grad_norm)
+        optimizer = tf.train.GradientDescentOptimizer(self.lr)
 
-        if dp.dataSetType=='kdd' or dp.dataSetType=='assistment2014':
-            optimizer = tf.train.AdamOptimizer(self.lr, epsilon=0.1)
-            #optimizer = tf.train.GradientDescentOptimizer(self.lr)
-        else:
-            optimizer = tf.train.GradientDescentOptimizer(self.lr)
-
-        # optimizer = tf.train.FtrlOptimizer(self.lr,l1_regularization_strength=0.01,l2_regularization_strength=0.03)
         self._train_op = optimizer.apply_gradients(zip(grads, tvars))
 
     def assign_lr(self, session, lr_value):

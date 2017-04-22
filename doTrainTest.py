@@ -26,7 +26,7 @@ import code0_parameter as code0
 import code1_data as code1
 import code2_model as code2
 import code3_runEpoch as code3
-import aux
+import uril_tools as aux
 import tensorflow as tf
 import numpy as np
 import pandas as pd
@@ -35,7 +35,10 @@ from trainAutoEncoder import trainAEWeights
 
 np.set_printoptions(threshold=np.inf)
 
+
 def main(unused_args):
+    aux.check_directories()
+
     if not code0.BASELINE and code0.AUTOENCODER_LABEL:
         trainAEWeights()
 
@@ -43,7 +46,7 @@ def main(unused_args):
     dataset, labels = code1.load_data(dp)
     tuple_data = code1.convert_data_labels_to_tuples(dataset, labels)
 
-    skill_num = len(dataset['skill_id'].unique()) + 1  # 0 for unlisted skill_id
+    skill_num = len(dataset['skill_id'].unique()) + 1
     dp.skill_num = skill_num
     dp.skill_set = list(dataset['skill_id'].unique())
     dp.columns_max, dp.columns_numb, dp.columnsName_to_index = code1.get_columns_info(dataset)
@@ -56,8 +59,10 @@ def main(unused_args):
     config = code0.ModelParamsConfig(dp)
     eval_config = code0.ModelParamsConfig(dp)
 
-    if dp.dataSetType=='kdd':
-        config.num_steps = 2000
+    if dp.dataSetType == 'kdd':
+        config.num_steps = 1500
+    elif dp.dataSetType == 'cmu_stat_f2011':
+        config.num_steps = 1500
     else:
         config.num_steps = aux.get_num_step(dataset)
 
@@ -67,22 +72,22 @@ def main(unused_args):
     config.skill_num = skill_num
     eval_config.skill_num = config.skill_num
 
-    auc_train,r2_train,rmse_train,auc_test,r2_test,rmse_test = aux.defineResult()
-    CVname = auc_test.columns
+    name_list = ['cv', 'epoch', 'type', 'rmse', 'auc', 'r2', 'inter_rmse', 'inter_auc', 'inter_r2', 'intra_rmse',
+                 'intra_auc', 'intra_r2']
+    result_data = pd.DataFrame(columns=name_list)
+    CVname = ['c1', 'c2', 'c3', 'c4', 'c5']
     size = len(tuple_data)
 
     # write all the records to log file
     aux.printConfigration(config=config, dp=dp, train_numb=int(size * 0.8), test_numb=int(size * 0.2))
-    aux.logwrite(["==> model_continues_columns\n" + ','.join(dp.model_continues_columns)],
-                            dp,True)
-    aux.logwrite(["==> model_category_columns\n" + ','.join(dp.model_category_columns)],
-                            dp,True)
+    aux.logwrite(["==> model_continues_columns\n" + ','.join(dp.model_continues_columns)], dp, True)
+    aux.logwrite(["==> model_category_columns\n" + ','.join(dp.model_category_columns)], dp, True)
     str_cross_columns_list = ['-'.join(i) for i in dp.model_cross_columns]
     str_cross_columns = ','.join(str_cross_columns_list)
-    aux.logwrite(["==> model_cross_columns\n" + str_cross_columns], dp,True)
+    aux.logwrite(["==> model_cross_columns\n" + str_cross_columns], dp, True)
 
     for index, cv_num_name in enumerate(CVname):
-        aux.logwrite(["\nCross-validation: \t" + str(index + 1) + "/5"], dp,prt=True)
+        aux.logwrite(["\nCross-validation: \t" + str(index + 1) + "/5"], dp, prt=True)
         timeStampe = datetime.datetime.now().strftime("%m-%d-%H:%M")
         aux.logwrite(["\ntime:\t" + timeStampe], dp)
 
@@ -108,37 +113,45 @@ def main(unused_args):
                 m.assign_lr(session, config.learning_rate * lr_decay)
 
                 rt = session.run(m.lr)
-                rmse, auc, r2 = code3.run_epoch(session, m, train_tuple_rows, m.train_op, verbose=True)
-                train_result = "\n==> %s cross-valuation: Train Epoch: %d\tLearning rate: %.3f\t rmse: %.3f \t auc: %.3f \t r2: %.3f" % (
-                    cv_num_name, i + 1, rt, rmse, auc, r2)
-                print(train_result)
-                auc_train.loc[i, cv_num_name] = auc
-                rmse_train.loc[i, cv_num_name] = rmse
-                r2_train.loc[i, cv_num_name] = r2
-                aux.logwrite(train_result, dp,False)
+                rmse, auc, r2, inter_rmse, inter_auc, inter_r2, intra_rmse, intra_auc, intra_r2 = code3.run_epoch(
+                    session, m, train_tuple_rows, m.train_op, verbose=True)
+
+                aux.print_result(dp, cv_num_name, i, rt, rmse, auc, r2, inter_rmse, inter_auc, inter_r2, intra_rmse,
+                                 intra_auc, intra_r2, 'train')
+
+                result_data = result_data.append(pd.Series(
+                    [cv_num_name, i, 'train', rmse, auc, r2, inter_rmse, inter_auc, inter_r2, intra_rmse, intra_auc,
+                     intra_r2], index=name_list), ignore_index=True)
 
                 display = 5
                 if ((i + 1) % display == 0):
-                    print("-" * 80)
-                    rmse, auc, r2 = code3.run_epoch(session, mtest, test_tuple_rows, tf.no_op())
-                    test_result = "\n==> %s cross-valuation: Test Epoch: %d \t rmse: %.3f \t auc: %.3f \t r2: %.3f" % (
-                        cv_num_name, (i + 1) / display, rmse, auc, r2)
-                    print(test_result)
-                    print("=" * 80)
-                    auc_test.loc[(i + 1) / display - 1, cv_num_name] = auc
-                    rmse_test.loc[(i + 1) / display - 1, cv_num_name] = rmse
-                    r2_test.loc[(i + 1) / display - 1, cv_num_name] = r2
-                    aux.logwrite(test_result, dp,False)
+                    print('BEGIN', "-" * 80)
+                    rmse, auc, r2, inter_rmse, inter_auc, inter_r2, intra_rmse, intra_auc, intra_r2 = code3.run_epoch(
+                        session, mtest, test_tuple_rows, tf.no_op())
+                    aux.print_result(dp, cv_num_name, i, rt, rmse, auc, r2, inter_rmse, inter_auc, inter_r2, intra_rmse,
+                                     intra_auc, intra_r2, 'test', display)
+                    print('END--', "-" * 80)
+
+                    result_data = result_data.append(pd.Series(
+                        [cv_num_name, (i + 1) / display, 'test', rmse, auc, r2, inter_rmse, inter_auc, inter_r2,
+                         intra_rmse, intra_auc, intra_r2], index=name_list), ignore_index=True)
+
+                #print ("-*"*50,"\n",result_data)
+
     print("==> Finsih! whole process, save result and print\t" + dp.currentTime)
 
-    try:
-        mean_result = pd.DataFrame({"AUC": list(auc_test.mean(1)), "RMSE": list(rmse_test.mean(1)),
-                           "R2": list(r2_test.mean(1))})
-        print(mean_result)
-        aux.saveResult(dp,auc_train,rmse_train,r2_train,auc_test,rmse_test,r2_test,mean_result)
-    except:
-        print("except during save result")
-        pass
+    temp_data = result_data[result_data['type'] == 'test']
+    for idx in set(temp_data['epoch']):
+        tp = temp_data[temp_data['epoch'] == idx]
+        result_data = result_data.append(pd.Series(
+            ['average', idx, 'test_mean', tp['rmse'].mean(), tp['auc'].mean(), tp['r2'].mean(), tp['inter_rmse'].mean(),
+             tp['inter_auc'].mean(), tp['inter_r2'].mean(), tp['intra_rmse'].mean(), tp['intra_auc'].mean(),
+             tp['intra_r2'].mean()], index=name_list), ignore_index=True)
+
+    print(result_data[result_data['cv']=='average'])
+    result_data.to_csv('./result/'+code0.DATASETTYPE+'/result_'+timeStampe+'.csv')
+    print('==> save to ./result/'+code0.DATASETTYPE+'/result_'+timeStampe+'.csv')
+
 
 if __name__ == "__main__":
     tf.app.run()

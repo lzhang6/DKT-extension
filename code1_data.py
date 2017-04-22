@@ -1,9 +1,18 @@
-import pandas as pd
-import os, random, pyprind, csv, math, sys
-import aux
-import code0_parameter as code0
-import uril_assistment2009, uril_assistment2014, uril_kdd
+import math
+import os
+import pyprind
+import random
+import sys
+
 import numpy as np
+import pandas as pd
+
+import code0_parameter as code0
+import uril_assistment2009
+import uril_cmu_statistic
+import uril_tools as aux
+from bak import uril_kdd
+
 
 def create_label_and_delete_last_one(dp):
     dataFileName = os.path.dirname(dp.csv_file_name) + "/dataset_" + str(dp.dataSetSize) + ".csv"
@@ -18,10 +27,10 @@ def create_label_and_delete_last_one(dp):
 
     if dp.dataSetType == "assistment2009":
         data = uril_assistment2009.read_asssistment2009_data_from_csv(dp)
-    elif dp.dataSetType == "assistment2014":
-        data = uril_assistment2014.read_asssistment2014_data_from_csv(dp)
     elif dp.dataSetType == "kdd":
         data = uril_kdd.read_kdd_data_from_csv(dp)
+    elif dp.dataSetType == "cmu_stat_f2011":
+        data = uril_cmu_statistic.read_data_from_csv()
 
     userID_Quest_number_matrix = aux.getUserQuesNumList(data['user_id'])  # user_id: number of questions
     print("==> creat skill_id+label, last record of every user is deleted")
@@ -52,8 +61,8 @@ def create_label_and_delete_last_one(dp):
 
     if os.path.exists(dataFileName): os.remove(dataFileName)
     if os.path.exists(labelFileName): os.remove(labelFileName)
-    dataset.to_csv(dataFileName,index=False)
-    labels.to_csv(labelFileName,index=False)
+    dataset.to_csv(dataFileName, index=False)
+    labels.to_csv(labelFileName, index=False)
     print("==> save ", dataFileName)
     print("==> save ", labelFileName)
 
@@ -101,9 +110,9 @@ def get_columns_info(dataset):
             columns_numb[column_name] = len(dataset[column_name].unique())
             columnsName_to_index[column_name] = i
         except:
-            print (dataset.columns)
-            print (np.shape(dataset))
-            print (dataset[column_name])
+            print(dataset.columns)
+            print(np.shape(dataset))
+            print(dataset[column_name])
             raise ValueError(column_name)
 
     return columns_max, columns_numb, columnsName_to_index
@@ -120,9 +129,13 @@ def add_cross_feature_to_dataset(dataset, dp):
         for item in dp.dataset_columns_for_cross_feature:
             print("==> add", aux.connectStringfromList(item))
             temp = []
-            for i in pyprind.prog_percent(range(d_size),stream=sys.stdout, title=item):
+            for i in pyprind.prog_percent(range(d_size), stream=sys.stdout, title=item):
                 if len(item) == 2:
+
                     value = dataset.loc[i, item[0]] + dataset.loc[i, item[1]] * (columns_max[item[0]] + 1)
+                    #print(" dataset.loc[i, item[0]]\t", dataset.loc[i, item[0]], "\tdataset.loc[i, item[1]]\t",
+                    #      dataset.loc[i, item[1]], "\t(columns_max[item[0]] + 1)\t",(columns_max[item[0]] + 1),
+                    #      "\tvalue\t", value)
                 elif len(item) == 3:
                     value = dataset.loc[i, item[0]] + dataset.loc[i, item[1]] * (columns_max[item[0]] + 1) + \
                             dataset.loc[i, item[2]] * (columns_max[item[0]] + 1) * (columns_max[item[1]] + 1)
@@ -187,19 +200,20 @@ def load_data(dp):
         dataFileName = os.path.dirname(dp.csv_file_name) + "/dataset_" + str(dp.dataSetSize) + ".csv"
     else:
         tmp = aux.connectStringfromList(dp.convertCrossCoumnsToNameList())
-        dataFileName = os.path.dirname(dp.csv_file_name)+'/'+tmp+"_"+str(dp.dataSetSize)+'_'+".csv"
+        dataFileName = os.path.dirname(dp.csv_file_name) + '/' + tmp + "_" + str(dp.dataSetSize) + '_' + ".csv"
     labelFileName = os.path.dirname(dp.csv_file_name) + "/labels_" + str(dp.dataSetSize) + ".csv"
 
     if os.path.exists(dataFileName) and os.path.exists(labelFileName):
-        data    = pd.read_csv(dataFileName)
-        labels  = pd.read_csv(labelFileName)
-        return data,labels
+        data = pd.read_csv(dataFileName)
+        labels = pd.read_csv(labelFileName)
+        return data, labels
     else:
         data, labels = create_label_and_delete_last_one(dp)
         dataset_with_crossFeatures = add_cross_feature_to_dataset(data, dp)
-        dataset_with_crossFeatures.to_csv(dataFileName,index=False)
+        dataset_with_crossFeatures.to_csv(dataFileName, index=False)
         print("==> save ", dataFileName)
         return dataset_with_crossFeatures, labels
+
 
 if __name__ == "__main__":
     dp = code0.DatasetParameter()

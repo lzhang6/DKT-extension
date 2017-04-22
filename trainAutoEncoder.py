@@ -13,8 +13,8 @@ class SIMPLEAUTOENCODER(object):
         ohe = ONEHOTENCODERINPUT(SAEconfig, dp, self.inputs)
         #self.mask = tf.placeholder(tf.float32, [SAEconfig.batch_size*SAEconfig.num_steps, SAEconfig.seq_width])
         #############################################################################################################
-        featureslist = [ohe.getSkillCorrectCrossFeature(),ohe.getCrossFeatureAll()]#, ohe.getCategoryFeatureInputs()]#,
-                        #ohe.getContinuesFeatureInputs()]
+        #featureslist = [ohe.getSkillCorrectCrossFeature(),ohe.getCrossFeatureAll()]
+        featureslist = [ohe.getSkillCorrectCrossFeature(), ohe.getCrossFeatureAll()]#, ohe.getCategoryFeatureInputs()]
         #############################################################################################################
         x_tmp = tf.concat(2, featureslist)
         self.dp = dp
