@@ -20,6 +20,18 @@ Environment:
     6. CPU i5-6600k
     7. RAM: 16G
 """
+
+''' 
+Unless stated otherwise, all software is provided free of charge. 
+As well, all software is provided on an "as is" basis without warranty 
+of any kind, express or implied. Under no circumstances and under no legal 
+theory, whether in tort, contract, or otherwise, shall Liang Zhang be liable 
+to you or to any other person for any indirect, special, incidental, 
+or consequential damages of any character including, without limitation, 
+damages for loss of goodwill, work stoppage, computer failure or malfunction, 
+or for any and all other damages or losses. If you do not agree with these terms, 
+then you are advised to not use the software.'''
+
 from __future__ import print_function
 
 import code0_parameter as code0
